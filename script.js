@@ -175,32 +175,37 @@
         }
         
         // ========================================
-        // FUNÇÃO DE DADOS DE EXEMPLO (NOVA)
+        // ========================================
+        // FUNÇÃO DE DADOS DE EXEMPLO (CORRIGIDA)
         // ========================================
         function carregarDadosDeExemplo() {
             if (!confirm('Esta ação limpará todos os dados existentes e carregará 20 exemplos de vendas e estoque. Continuar?')) {
                 return;
             }
             limparTudo(false); // Limpa sem perguntar novamente
-            
+
+            // As variáveis globais foram resetadas por limparTudo, agora vamos preenchê-las.
+
             // 1. DADOS DE CONSIGNATÁRIOS
             const nomesConsignatarios = ['Ana Silva', 'Bruno Lima', 'Carla Mendes', 'David Costa', 'Elaine Fernandes'];
-            clientes = nomesConsignatarios.map((nome, index) => ({
+            const novosClientes = nomesConsignatarios.map((nome, index) => ({
                 id: index + 1,
                 nome,
                 telefone: `(99) 99999-${1000 + index}`,
                 email: `${nome.toLowerCase().replace(' ', '.')}@email.com`,
                 creditos: 0.00
             }));
+            clientes = novosClientes;
 
             // 2. DADOS DE COMPRADORES
             const nomesCompradores = ['Felipe Gomes', 'Gabriela Alves', 'Henrique Souza', 'Isabela Rocha', 'João Pereira'];
-            compradores = nomesCompradores.map((nome, index) => ({
+            const novosCompradores = nomesCompradores.map((nome, index) => ({
                 id: index + 1,
                 nome,
                 telefone: `(99) 88888-${1000 + index}`,
                 totalCompras: 0.00
             }));
+            compradores = novosCompradores;
             
             // 3. DADOS DE BAZARES
             bazares = [
@@ -209,28 +214,36 @@
                 { id: 3, nome: 'Bazar Inverno 2025', dataInicio: '2025-07-01', dataFim: '2025-07-15' },
             ];
 
-            // 4. ITENS INICIAIS (ALGUNS VENDIDOS, OUTROS DISPONÍVEIS)
+            // 4. ITENS INICIAIS (BASE PARA VENDAS E ALGUNS DISPONÍVEIS)
             const descricoesItens = [
                 'Vestido Floral Longo', 'Calça Jeans Skinny', 'Blusa de Seda', 'Jaqueta de Couro', 'Bolsa Tiracolo',
                 'Sapato Social Masculino', 'Tênis Esportivo', 'Óculos de Sol', 'Cinto de Couro', 'Brinco de Prata'
             ];
             
-            itens = descricoesItens.map((desc, index) => ({
+            const novosItens = descricoesItens.map((desc, index) => ({
                 id: index + 1,
                 descricao: desc,
                 consignatarioId: (index % clientes.length) + 1,
                 valor: parseFloat((Math.random() * 200 + 50).toFixed(2)),
-                quantidade: 0, // Inicia em 0, será ajustado pelas vendas
+                quantidade: 0, // Inicia em 0
                 bazarId: (index % bazares.length) + 1,
-                status: 'Vendido' // status inicial é irrelevante, pois criaremos as vendas
+                status: 'Vendido' // status inicial
             }));
+            
+            // Adiciona mais itens que estarão APENAS disponíveis
+            novosItens.push(
+                { id: 11, descricao: 'Camiseta Básica P', consignatarioId: 2, valor: 45.00, quantidade: 3, bazarId: 2, status: 'Disponível' },
+                { id: 12, descricao: 'Porta Retratos Grande', consignatarioId: 5, valor: 90.00, quantidade: 1, bazarId: 2, status: 'Disponível' }
+            );
+            itens = novosItens;
 
             // 5. REGISTRO DE 20 VENDAS ALEATÓRIAS
             for (let i = 0; i < 20; i++) {
-                const itemId = (i % itens.length) + 1;
-                const itemBase = itens[itemId - 1];
-                const valorVenda = parseFloat((itemBase.valor * (Math.random() * 0.2 + 0.9)).toFixed(2)); // Varia 10%
+                const itemId = (i % descricoesItens.length) + 1; // Itens 1 a 10
+                const itemBase = itens.find(item => item.id === itemId);
+                if (!itemBase) continue; 
 
+                const valorVenda = parseFloat((itemBase.valor * (Math.random() * 0.2 + 0.9)).toFixed(2));
                 const consignatario = clientes.find(c => c.id === itemBase.consignatarioId);
                 const comprador = compradores[(i % compradores.length)];
                 
@@ -238,9 +251,11 @@
                 const creditoGerado = valorVenda * percentualConsignatario;
                 const comissaoLoja = valorVenda - creditoGerado;
                 
-                // Atualiza o estoque
-                itemBase.quantidade += 1;
-                itemBase.status = 'Vendido'; // Venda registrada
+                // Atualiza o estoque: O item foi vendido, então ele deve ser contado como 'consumido' do estoque inicial. 
+                // Como não iniciamos o estoque, o contador de quantidade de itens vendidos é 0
+                // itemBase.quantidade é o estoque ATUAL que sobra.
+                itemBase.quantidade = 0; // O item foi vendido e não sobrou mais nada. 
+                itemBase.status = 'Vendido'; 
                 
                 // Atualiza o crédito do consignatário
                 consignatario.creditos = (consignatario.creditos || 0) + creditoGerado;
@@ -249,7 +264,7 @@
                 comprador.totalCompras = (comprador.totalCompras || 0) + valorVenda;
 
                 // Define a data de venda aleatória nos últimos 60 dias
-                const dateOffset = Math.floor(Math.random() * 60); // 0 to 59 days ago
+                const dateOffset = Math.floor(Math.random() * 60); 
                 const date = new Date();
                 date.setDate(date.getDate() - dateOffset);
                 const dataVenda = date.toISOString().split('T')[0];
@@ -268,28 +283,36 @@
             }
             
             // 6. REGISTRO DE CONSUMOS (PARA TESTAR DEDUÇÃO DE CRÉDITO)
-            consumos.push({
-                id: 1,
-                consignatarioId: 1, // Ana Silva
-                valor: 50.00,
-                data: obterDataHojeISO(),
-                descricao: 'Retirada de crédito em dinheiro'
-            });
-            clientes.find(c => c.id === 1).creditos -= 50.00;
-
-            // 7. ITENS DISPONÍVEIS ADICIONAIS
-            itens.push(
-                { id: 11, descricao: 'Camiseta Básica P', consignatarioId: 2, valor: 45.00, quantidade: 3, bazarId: 2, status: 'Disponível' },
-                { id: 12, descricao: 'Porta Retratos Grande', consignatarioId: 5, valor: 90.00, quantidade: 1, bazarId: 2, status: 'Disponível' }
-            );
+            // Apenas para consignatários que tiveram crédito gerado (Ana Silva)
+            const anaSilva = clientes.find(c => c.id === 1); 
+            if (anaSilva && anaSilva.creditos > 50) {
+                 consumos.push({
+                    id: 1,
+                    consignatarioId: 1, 
+                    valor: 50.00,
+                    data: obterDataHojeISO(),
+                    descricao: 'Retirada de crédito em dinheiro (Teste)'
+                });
+                anaSilva.creditos -= 50.00;
+            }
 
 
-            salvarDados();
-            location.reload(); // Recarrega para aplicar os dados e atualizar o Dashboard
-            mostrarNotificacao('20 Vendas, 5 Consignatários e 12 Itens de exemplo carregados!', 'sucesso');
+            // Salva todos os dados na storage antes de recarregar
+            localStorage.setItem('bazares', JSON.stringify(bazares));
+            localStorage.setItem('itens', JSON.stringify(itens));
+            localStorage.setItem('clientes', JSON.stringify(clientes)); 
+            localStorage.setItem('compradores', JSON.stringify(compradores)); 
+            localStorage.setItem('vendas', JSON.stringify(vendas));
+            localStorage.setItem('consumos', JSON.stringify(consumos)); 
+            localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
+            
+            mostrarNotificacao('20 Vendas, 5 Consignatários e 12 Itens de exemplo carregados! Recarregando a página...', 'sucesso');
+            
+            // Recarrega a página para iniciar o app com os novos dados
+            setTimeout(() => {
+                location.reload(); 
+            }, 100);
         }
-
-
         // ========================================
         // GESTÃO DE TABS E INICIALIZAÇÃO
         // ========================================
