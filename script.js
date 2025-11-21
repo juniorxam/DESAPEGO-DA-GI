@@ -33,6 +33,8 @@
 
         function mostrarNotificacao(mensagem, tipo = 'info') {
             const area = document.getElementById('notification-area');
+            if (!area) return; // Segurança extra
+
             const notif = document.createElement('div');
             notif.className = `notification ${tipo}`;
             notif.innerHTML = `<strong>${mensagem}</strong>`;
@@ -55,6 +57,8 @@
             localStorage.setItem('vendas', JSON.stringify(vendas));
             localStorage.setItem('consumos', JSON.stringify(consumos));
             localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
+            
+            // Renderiza o que for visível
             renderizarTodasTabelas();
             renderizarDashboard();
         }
@@ -92,10 +96,8 @@
 
         function checkInitializers() {
             if (bazares.length === 0) {
-                mostrarNotificacao('Nenhum dado encontrado. Sugerimos carregar os dados de exemplo na aba "Configurações".', 'info', 7000);
+                // A notificação será exibida na primeira carga
             }
-            // Garante que a primeira aba esteja ativa
-            document.querySelector('.tab-content.active') || showTab('dashboard');
         }
 
         function limparTudo(confirmar = true) {
@@ -111,22 +113,16 @@
             localStorage.clear();
             mostrarNotificacao('Todos os dados foram apagados. Recarregando a página...', 'aviso');
             
-            // Recarrega para resetar variáveis globais e o estado do app
             setTimeout(() => {
                 location.reload(); 
             }, 100);
         }
 
-        // =========================================
-        // FUNÇÃO DE DADOS DE EXEMPLO (CORRIGIDA)
-        // =========================================
         function carregarDadosDeExemplo() {
             if (!confirm('Esta ação limpará todos os dados existentes e carregará 20 exemplos de vendas e estoque. Continuar?')) {
                 return;
             }
-            limparTudo(false); // Limpa sem perguntar novamente
-
-            // As variáveis globais foram resetadas por limparTudo, agora vamos preenchê-las.
+            limparTudo(false); 
 
             // 1. DADOS DE CONSIGNATÁRIOS
             const nomesConsignatarios = ['Ana Silva', 'Bruno Lima', 'Carla Mendes', 'David Costa', 'Elaine Fernandes'];
@@ -172,7 +168,6 @@
                 status: 'Vendido' // status inicial
             }));
             
-            // Adiciona mais itens que estarão APENAS disponíveis
             novosItens.push(
                 { id: 11, descricao: 'Camiseta Básica P', consignatarioId: 2, valor: 45.00, quantidade: 3, bazarId: 2, status: 'Disponível' },
                 { id: 12, descricao: 'Porta Retratos Grande', consignatarioId: 5, valor: 90.00, quantidade: 1, bazarId: 2, status: 'Disponível' }
@@ -181,7 +176,7 @@
 
             // 5. REGISTRO DE 20 VENDAS ALEATÓRIAS
             for (let i = 0; i < 20; i++) {
-                const itemId = (i % descricoesItens.length) + 1; // Itens 1 a 10
+                const itemId = (i % descricoesItens.length) + 1; 
                 const itemBase = itens.find(item => item.id === itemId);
                 if (!itemBase) continue; 
 
@@ -191,19 +186,13 @@
                 
                 const percentualConsignatario = configuracoes.percentualConsignatario / 100;
                 const creditoGerado = valorVenda * percentualConsignatario;
-                const comissaoLoja = valorVenda - creditoGerado;
                 
-                // Atualiza o estoque: O item foi vendido, então ele deve ser contado como 'consumido' do estoque inicial. 
-                itemBase.quantidade = 0; // O item foi vendido e não sobrou mais nada. 
+                itemBase.quantidade = 0; 
                 itemBase.status = 'Vendido'; 
                 
-                // Atualiza o crédito do consignatário
                 consignatario.creditos = (consignatario.creditos || 0) + creditoGerado;
-
-                // Atualiza o total de compras do comprador
                 comprador.totalCompras = (comprador.totalCompras || 0) + valorVenda;
 
-                // Define a data de venda aleatória nos últimos 60 dias
                 const dateOffset = Math.floor(Math.random() * 60); 
                 const date = new Date();
                 date.setDate(date.getDate() - dateOffset);
@@ -216,13 +205,13 @@
                     bazarVendaId: itemBase.bazarId,
                     valorVenda,
                     creditoGerado,
-                    comissaoLoja,
+                    comissaoLoja: valorVenda - creditoGerado,
                     dataVenda,
                     formaPagamento: ['PIX', 'Cartao', 'Dinheiro'][(i % 3)]
                 });
             }
             
-            // 6. REGISTRO DE CONSUMOS (PARA TESTAR DEDUÇÃO DE CRÉDITO)
+            // 6. REGISTRO DE CONSUMOS 
             const anaSilva = clientes.find(c => c.id === 1); 
             if (anaSilva && anaSilva.creditos > 50) {
                  consumos.push({
@@ -235,8 +224,6 @@
                 anaSilva.creditos = Math.max(0, anaSilva.creditos - 50.00);
             }
 
-
-            // Salva todos os dados na storage antes de recarregar
             localStorage.setItem('bazares', JSON.stringify(bazares));
             localStorage.setItem('itens', JSON.stringify(itens));
             localStorage.setItem('clientes', JSON.stringify(clientes)); 
@@ -245,29 +232,39 @@
             localStorage.setItem('consumos', JSON.stringify(consumos)); 
             localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
             
-            mostrarNotificacao('20 Vendas, 5 Consignatários e 12 Itens de exemplo carregados! Recarregando a página...', 'sucesso');
+            mostrarNotificacao('Dados de exemplo carregados! Recarregando a página...', 'sucesso');
             
-            // Recarrega a página para iniciar o app com os novos dados
             setTimeout(() => {
                 location.reload(); 
             }, 100);
         }
 
         // =========================================
-        // NAVEGAÇÃO
+        // NAVEGAÇÃO (CORRIGIDO)
         // =========================================
         function showTab(tabId) {
+            // Remove a classe 'active' de todos os conteúdos de aba
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
+            // Remove a classe 'active' de todos os botões de aba
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
 
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active');
+            // Adiciona 'active' ao conteúdo da aba selecionada (com checagem de null)
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Adiciona 'active' ao botão da aba selecionada (com checagem de null)
+            const tabButton = document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`);
+            if (tabButton) {
+                tabButton.classList.add('active');
+            }
             
-            // Renderiza novamente a dashboard e outras abas ativas
+            // Renderiza o conteúdo específico da aba
             if (tabId === 'dashboard') {
                 renderizarDashboard();
             } else {
@@ -280,14 +277,14 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
             configuracoes.tema = newTheme;
-            salvarConfiguracoes(); // Salva o tema nas configurações
+            salvarConfiguracoes(); 
             
-            // Atualiza o ícone do botão
             const icon = document.querySelector('.theme-toggle i');
-            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            
-            // Recarrega a dashboard para aplicar o tema aos gráficos
-            if (document.getElementById('dashboard').classList.contains('active')) {
+            if(icon) {
+                 icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+           
+            if (document.getElementById('dashboard')?.classList.contains('active')) {
                 renderizarDashboard();
             }
         }
@@ -297,9 +294,9 @@
         // GESTÃO DE BAZARES
         // =========================================
         function criarBazar() {
-            const nome = document.getElementById('bazarNome').value.trim();
-            const inicio = document.getElementById('bazarInicio').value;
-            const fim = document.getElementById('bazarFim').value;
+            const nome = document.getElementById('bazarNome')?.value.trim();
+            const inicio = document.getElementById('bazarInicio')?.value;
+            const fim = document.getElementById('bazarFim')?.value;
 
             if (!nome || !inicio) {
                 mostrarNotificacao('Preencha o nome e a data de início do bazar.', 'erro');
@@ -315,7 +312,7 @@
 
             bazares.push(novoBazar);
             salvarDados();
-            document.getElementById('formBazar').reset();
+            document.getElementById('formBazar')?.reset();
             mostrarNotificacao(`Bazar "${nome}" criado com sucesso!`, 'sucesso');
         }
 
@@ -340,7 +337,7 @@
             bazar.dataFim = document.getElementById('bazarFim').value || null;
 
             salvarDados();
-            document.getElementById('formBazar').reset();
+            document.getElementById('formBazar')?.reset();
             document.getElementById('bazarSalvar').innerText = 'Criar Bazar';
             document.getElementById('bazarSalvar').onclick = criarBazar;
             mostrarNotificacao(`Bazar "${bazar.nome}" atualizado com sucesso!`, 'sucesso');
@@ -389,9 +386,9 @@
         // GESTÃO DE CONSIGNATÁRIOS (Clientes Donos de Itens)
         // =========================================
         function adicionarConsignatario() {
-            const nome = document.getElementById('consignatarioNome').value.trim();
-            const telefone = document.getElementById('consignatarioTelefone').value.trim();
-            const email = document.getElementById('consignatarioEmail').value.trim();
+            const nome = document.getElementById('consignatarioNome')?.value.trim();
+            const telefone = document.getElementById('consignatarioTelefone')?.value.trim();
+            const email = document.getElementById('consignatarioEmail')?.value.trim();
 
             if (!nome) {
                 mostrarNotificacao('O nome do consignatário é obrigatório.', 'erro');
@@ -408,7 +405,7 @@
 
             clientes.push(novoConsignatario);
             salvarDados();
-            document.getElementById('formConsignatario').reset();
+            document.getElementById('formConsignatario')?.reset();
             mostrarNotificacao(`Consignatário "${nome}" adicionado com sucesso!`, 'sucesso');
         }
         
@@ -433,16 +430,15 @@
             cliente.email = document.getElementById('consignatarioEmail').value.trim();
 
             salvarDados();
-            document.getElementById('formConsignatario').reset();
+            document.getElementById('formConsignatario')?.reset();
             document.getElementById('consignatarioSalvar').innerText = 'Adicionar Consignatário';
             document.getElementById('consignatarioSalvar').onclick = adicionarConsignatario;
             mostrarNotificacao(`Consignatário "${cliente.nome}" atualizado com sucesso!`, 'sucesso');
         }
 
         function excluirConsignatario(id) {
-            // Verifica se há itens ou vendas ativas
             const temItens = itens.some(i => i.consignatarioId === id && i.status !== 'Vendido');
-            const temCreditos = clientes.find(c => c.id === id).creditos > 0;
+            const temCreditos = clientes.find(c => c.id === id)?.creditos > 0;
             
             if (temItens || temCreditos) {
                 mostrarNotificacao('Não é possível excluir: o consignatário tem itens em estoque ou crédito pendente.', 'erro');
@@ -453,7 +449,6 @@
                 return;
             }
             clientes = clientes.filter(c => c.id !== id);
-            // Atualiza itens para remover a referência (opcional: mudar consignatarioId para null)
             itens.filter(i => i.consignatarioId === id).forEach(i => i.consignatarioId = null); 
             salvarDados();
             mostrarNotificacao('Consignatário excluído!', 'aviso');
@@ -503,8 +498,8 @@
         // GESTÃO DE COMPRADORES (Clientes que Compram)
         // =========================================
         function adicionarComprador() {
-            const nome = document.getElementById('compradorNome').value.trim();
-            const telefone = document.getElementById('compradorTelefone').value.trim();
+            const nome = document.getElementById('compradorNome')?.value.trim();
+            const telefone = document.getElementById('compradorTelefone')?.value.trim();
 
             if (!nome) {
                 mostrarNotificacao('O nome do comprador é obrigatório.', 'erro');
@@ -520,7 +515,7 @@
 
             compradores.push(novoComprador);
             salvarDados();
-            document.getElementById('formComprador').reset();
+            document.getElementById('formComprador')?.reset();
             mostrarNotificacao(`Comprador "${nome}" adicionado com sucesso!`, 'sucesso');
         }
 
@@ -543,7 +538,7 @@
             comprador.telefone = document.getElementById('compradorTelefone').value.trim();
 
             salvarDados();
-            document.getElementById('formComprador').reset();
+            document.getElementById('formComprador')?.reset();
             document.getElementById('compradorSalvar').innerText = 'Adicionar Comprador';
             document.getElementById('compradorSalvar').onclick = adicionarComprador;
             mostrarNotificacao(`Comprador "${comprador.nome}" atualizado com sucesso!`, 'sucesso');
@@ -621,11 +616,11 @@
         }
 
         function adicionarItem() {
-            const descricao = document.getElementById('itemDescricao').value.trim();
-            const consignatarioId = parseInt(document.getElementById('itemConsignatarioId').value);
-            const valor = parseFloat(document.getElementById('itemValor').value);
-            const quantidade = parseInt(document.getElementById('itemQuantidade').value);
-            const bazarId = parseInt(document.getElementById('itemBazarId').value);
+            const descricao = document.getElementById('itemDescricao')?.value.trim();
+            const consignatarioId = parseInt(document.getElementById('itemConsignatarioId')?.value);
+            const valor = parseFloat(document.getElementById('itemValor')?.value);
+            const quantidade = parseInt(document.getElementById('itemQuantidade')?.value);
+            const bazarId = parseInt(document.getElementById('itemBazarId')?.value);
 
             if (!descricao || !consignatarioId || isNaN(valor) || isNaN(quantidade) || !bazarId) {
                 mostrarNotificacao('Preencha todos os campos obrigatórios (Descrição, Consignatário, Valor, Quantidade e Bazar).', 'erro');
@@ -644,7 +639,7 @@
 
             itens.push(novoItem);
             salvarDados();
-            document.getElementById('formItem').reset();
+            document.getElementById('formItem')?.reset();
             mostrarNotificacao(`Item "${descricao}" adicionado com ${quantidade} unidade(s)!`, 'sucesso');
         }
         
@@ -652,15 +647,13 @@
             const item = itens.find(i => i.id === id);
             if (!item) return;
             
-            popularSelectsItens(); // Garante que os selects estão preenchidos
+            popularSelectsItens(); 
 
             document.getElementById('itemDescricao').value = item.descricao;
             document.getElementById('itemConsignatarioId').value = item.consignatarioId;
             document.getElementById('itemValor').value = item.valor;
             document.getElementById('itemQuantidade').value = item.quantidade;
             document.getElementById('itemBazarId').value = item.bazarId;
-            
-            // O campo 'status' é mais bem gerenciado pelas vendas
             
             document.getElementById('itemSalvar').innerText = 'Salvar Edição';
             document.getElementById('itemSalvar').onclick = () => salvarEdicaoItem(id);
@@ -687,13 +680,12 @@
             item.quantidade = quantidade;
             item.bazarId = bazarId;
             
-            // Se a quantidade for > 0 e o status for 'Vendido', muda para 'Disponível'
             if (item.quantidade > 0 && item.status === 'Vendido') {
                  item.status = 'Disponível';
             }
 
             salvarDados();
-            document.getElementById('formItem').reset();
+            document.getElementById('formItem')?.reset();
             document.getElementById('itemSalvar').innerText = 'Adicionar Item';
             document.getElementById('itemSalvar').onclick = adicionarItem;
             mostrarNotificacao(`Item "${item.descricao}" atualizado com sucesso!`, 'sucesso');
@@ -776,7 +768,6 @@
                 return;
             }
 
-            // Itens: Apenas itens disponíveis e com quantidade > 0
             const itensDisponiveis = itens.filter(i => i.quantidade > 0 && i.status !== 'Vendido');
             
             selectItem.innerHTML = '<option value="">Selecione o Item...</option>';
@@ -785,13 +776,11 @@
                 selectItem.innerHTML += `<option value="${i.id}" data-valor="${i.valor}">${i.descricao} (${consignatario ? consignatario.nome : 'N/A'}) - ${formatarMoeda(i.valor)}</option>`;
             });
             
-            // Compradores
             selectComprador.innerHTML = '<option value="">Selecione o Comprador...</option>';
             compradores.forEach(c => {
                 selectComprador.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
             });
             
-             // Define a data de hoje como padrão
             const vendaData = document.getElementById('vendaData');
             if (vendaData) {
                  vendaData.value = obterDataHojeISO();
@@ -815,11 +804,11 @@
         }
 
         function registrarVenda() {
-            const itemId = parseInt(document.getElementById('vendaItemId').value);
-            const compradorId = parseInt(document.getElementById('vendaCompradorId').value);
-            const valorVenda = parseFloat(document.getElementById('vendaValor').value);
-            const formaPagamento = document.getElementById('vendaPagamento').value;
-            const dataVenda = document.getElementById('vendaData').value;
+            const itemId = parseInt(document.getElementById('vendaItemId')?.value);
+            const compradorId = parseInt(document.getElementById('vendaCompradorId')?.value);
+            const valorVenda = parseFloat(document.getElementById('vendaValor')?.value);
+            const formaPagamento = document.getElementById('vendaPagamento')?.value;
+            const dataVenda = document.getElementById('vendaData')?.value;
             
             if (!itemId || !compradorId || isNaN(valorVenda) || !formaPagamento || !dataVenda) {
                 mostrarNotificacao('Preencha todos os campos da venda.', 'erro');
@@ -827,7 +816,7 @@
             }
             
             const item = itens.find(i => i.id === itemId);
-            const consignatario = clientes.find(c => c.id === item.consignatarioId);
+            const consignatario = clientes.find(c => c.id === item?.consignatarioId);
             const comprador = compradores.find(c => c.id === compradorId);
 
             if (!item || item.quantidade <= 0) {
@@ -847,10 +836,14 @@
             }
 
             // 3. ATUALIZAÇÃO DO CRÉDITO DO CONSIGNATÁRIO
-            consignatario.creditos += creditoGerado;
-            
+            if (consignatario) {
+                 consignatario.creditos += creditoGerado;
+            }
+           
             // 4. ATUALIZAÇÃO DO TOTAL DE COMPRAS DO COMPRADOR
-            comprador.totalCompras += valorVenda;
+            if (comprador) {
+                comprador.totalCompras += valorVenda;
+            }
 
             // 5. REGISTRO DA VENDA
             const novaVenda = {
@@ -867,8 +860,8 @@
             vendas.push(novaVenda);
 
             salvarDados();
-            document.getElementById('formVenda').reset();
-            mostrarNotificacao(`Venda de ${item.descricao} registrada! Crédito de ${formatarMoeda(creditoGerado)} gerado para ${consignatario.nome}.`, 'sucesso', 5000);
+            document.getElementById('formVenda')?.reset();
+            mostrarNotificacao(`Venda de ${item.descricao} registrada! Crédito de ${formatarMoeda(creditoGerado)} gerado para ${consignatario?.nome || 'N/A'}.`, 'sucesso', 5000);
         }
 
         function excluirVenda(id) {
@@ -878,21 +871,18 @@
             }
             
             const item = itens.find(i => i.id === venda.itemId);
-            const consignatario = clientes.find(c => c.id === item.consignatarioId);
+            const consignatario = item ? clientes.find(c => c.id === item.consignatarioId) : null;
             const comprador = compradores.find(c => c.id === venda.compradorId);
 
-            // Reverte o estoque
             if (item) {
                 item.quantidade += 1;
                 item.status = 'Disponível';
             }
 
-            // Reverte o crédito
             if (consignatario) {
                 consignatario.creditos = Math.max(0, consignatario.creditos - venda.creditoGerado);
             }
             
-            // Reverte o total de compras
             if (comprador) {
                 comprador.totalCompras = Math.max(0, comprador.totalCompras - venda.valorVenda);
             }
@@ -947,7 +937,6 @@
         function popularSelectsConsumo() {
             const selectConsignatario = document.getElementById('consumoConsignatarioId');
             
-            // CORREÇÃO: Verifica se o elemento existe antes de tentar manipulá-lo.
             if (!selectConsignatario) {
                 return;
             }
@@ -957,7 +946,6 @@
                 selectConsignatario.innerHTML += `<option value="${c.id}" data-credito="${c.creditos}">${c.nome} (${formatarMoeda(c.creditos)} de crédito)</option>`;
             });
             
-             // Define a data de hoje como padrão
             const consumoData = document.getElementById('consumoData');
             if (consumoData) {
                 consumoData.value = obterDataHojeISO();
@@ -965,10 +953,10 @@
         }
 
         function registrarConsumo() {
-            const consignatarioId = parseInt(document.getElementById('consumoConsignatarioId').value);
-            const valor = parseFloat(document.getElementById('consumoValor').value);
-            const descricao = document.getElementById('consumoDescricao').value.trim();
-            const data = document.getElementById('consumoData').value;
+            const consignatarioId = parseInt(document.getElementById('consumoConsignatarioId')?.value);
+            const valor = parseFloat(document.getElementById('consumoValor')?.value);
+            const descricao = document.getElementById('consumoDescricao')?.value.trim();
+            const data = document.getElementById('consumoData')?.value;
 
             if (!consignatarioId || isNaN(valor) || valor <= 0 || !data) {
                 mostrarNotificacao('Preencha o consignatário, o valor e a data.', 'erro');
@@ -977,15 +965,18 @@
 
             const consignatario = clientes.find(c => c.id === consignatarioId);
 
+            if (!consignatario) {
+                mostrarNotificacao('Consignatário não encontrado.', 'erro');
+                return;
+            }
+
             if (valor > consignatario.creditos) {
                 mostrarNotificacao(`Valor do consumo (${formatarMoeda(valor)}) é maior que o crédito disponível (${formatarMoeda(consignatario.creditos)}).`, 'erro', 5000);
                 return;
             }
 
-            // 1. ATUALIZA O CRÉDITO
             consignatario.creditos -= valor;
 
-            // 2. REGISTRA O CONSUMO
             const novoConsumo = {
                 id: gerarId(consumos),
                 consignatarioId,
@@ -996,7 +987,7 @@
             consumos.push(novoConsumo);
 
             salvarDados();
-            document.getElementById('formConsumo').reset();
+            document.getElementById('formConsumo')?.reset();
             mostrarNotificacao(`Consumo de ${formatarMoeda(valor)} registrado para ${consignatario.nome}. Saldo atual: ${formatarMoeda(consignatario.creditos)}`, 'sucesso', 5000);
         }
 
@@ -1008,7 +999,6 @@
             
             const consignatario = clientes.find(c => c.id === consumo.consignatarioId);
 
-            // Reverte o crédito
             if (consignatario) {
                 consignatario.creditos += consumo.valor;
             }
@@ -1058,24 +1048,19 @@
             const selectBazar = document.getElementById('filterBazar');
             const selectConsignatario = document.getElementById('filterConsignatario');
             
-            // Verifica se estamos na dashboard
             if (!selectBazar || !selectConsignatario) return;
 
-            // Bazares
             selectBazar.innerHTML = '<option value="">Todos os Bazares</option>';
             bazares.forEach(b => {
-                selectBazar.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+                selectBazar.innerHTML += `<option value="${b.id}" ${b.id == currentDashboardFilter.bazarId ? 'selected' : ''}>${b.nome}</option>`;
             });
-            selectBazar.value = currentDashboardFilter.bazarId;
+            
 
-            // Consignatários
             selectConsignatario.innerHTML = '<option value="">Todos os Consignatários</option>';
             clientes.forEach(c => {
-                selectConsignatario.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+                selectConsignatario.innerHTML += `<option value="${c.id}" ${c.id == currentDashboardFilter.consignatarioId ? 'selected' : ''}>${c.nome}</option>`;
             });
-            selectConsignatario.value = currentDashboardFilter.consignatarioId;
             
-            // Mês (implementação simplificada para o último mês)
             const selectMes = document.getElementById('filterMes');
             if (selectMes) {
                 selectMes.value = currentDashboardFilter.mes;
@@ -1083,19 +1068,22 @@
         }
 
         function filtrarDashboard() {
-            currentDashboardFilter.mes = document.getElementById('filterMes').value;
-            currentDashboardFilter.bazarId = document.getElementById('filterBazar').value;
-            currentDashboardFilter.consignatarioId = document.getElementById('filterConsignatario').value;
+            const selectMes = document.getElementById('filterMes');
+            const selectBazar = document.getElementById('filterBazar');
+            const selectConsignatario = document.getElementById('filterConsignatario');
+
+            if (selectMes) currentDashboardFilter.mes = selectMes.value;
+            if (selectBazar) currentDashboardFilter.bazarId = selectBazar.value;
+            if (selectConsignatario) currentDashboardFilter.consignatarioId = selectConsignatario.value;
+            
             renderizarDashboard();
         }
 
         function renderizarDashboard() {
-            // Se o canvas de gráficos não existir (não estamos na aba Dashboard), sai.
             if (!document.getElementById('chartVendasMes')) return;
             
             let vendasFiltradas = vendas;
 
-            // Filtro de Consignatário
             if (currentDashboardFilter.consignatarioId) {
                 const conId = parseInt(currentDashboardFilter.consignatarioId);
                 vendasFiltradas = vendasFiltradas.filter(v => 
@@ -1103,13 +1091,11 @@
                 );
             }
 
-            // Filtro de Bazar
             if (currentDashboardFilter.bazarId) {
                 const bId = parseInt(currentDashboardFilter.bazarId);
-                vendasFiltradas = vendasFiltradas.filter(v => v.bazarVendaId === bId);
+                vendasFiltradas = vendasFiltradas.filter(v => v.bazarVendaId == bId);
             }
             
-            // Filtro de Mês (simples: YYYY-MM)
             if (currentDashboardFilter.mes) {
                 vendasFiltradas = vendasFiltradas.filter(v => v.dataVenda.startsWith(currentDashboardFilter.mes));
             }
@@ -1118,7 +1104,6 @@
             // CÁLCULOS
             const totalVendas = vendasFiltradas.reduce((sum, v) => sum + v.valorVenda, 0);
             const totalComissao = vendasFiltradas.reduce((sum, v) => sum + v.comissaoLoja, 0);
-            const totalCreditoGerado = vendasFiltradas.reduce((sum, v) => sum + v.creditoGerado, 0);
             const totalItensVendidos = vendasFiltradas.length;
             const estoqueAtual = itens.filter(i => i.quantidade > 0).reduce((sum, i) => sum + i.quantidade, 0);
 
@@ -1151,7 +1136,6 @@
             }, {});
             const sortedMeses = Object.keys(vendasPorMes).sort();
             const labelsMeses = sortedMeses.map(m => {
-                 // Formata YYYY-MM para MM/YYYY
                  const [ano, mes] = m.split('-');
                  return `${mes}/${ano}`;
             });
@@ -1206,7 +1190,7 @@
                     labels: labelsPagamento,
                     datasets: [{
                         data: dadosPagamento,
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', primaryColorLight], // Sucesso, Info, Warning, Primary
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', primaryColorLight], 
                         hoverOffset: 4
                     }]
                 },
@@ -1225,10 +1209,6 @@
         // FUNÇÕES DE RELATÓRIOS (PDF)
         // =========================================
 
-        /**
-         * Gera um relatório detalhado de vendas, consumos e saldo para um consignatário específico em PDF.
-         * @param {number} consignatarioId - ID do consignatário.
-         */
         function gerarRelatorioConsignatarioPDF(consignatarioId) {
             const consignatario = clientes.find(c => c.id === consignatarioId);
             if (!consignatario) {
@@ -1236,14 +1216,11 @@
                 return;
             }
 
-            // 1. FILTRAR DADOS
             const vendasConsignatario = vendas.filter(v => 
                 itens.some(i => i.id === v.itemId && i.consignatarioId === consignatarioId)
             );
             const consumosConsignatario = consumos.filter(c => c.consignatarioId === consignatarioId);
 
-            // 2. PREPARAR DOCUMENTO PDF
-            // window.jsPDF.default é a forma correta de acessar a classe
             const { jsPDF } = window.jspdf; 
             const doc = new jsPDF({
                 orientation: 'portrait',
@@ -1255,7 +1232,6 @@
             let finalY = margin;
 
             const primaryColor = configuracoes.tema === 'dark' ? '#8b5cf6' : '#6d28d9';
-            // const tableHeaderColor = configuracoes.tema === 'dark' ? '#1f2937' : '#f3f4f6'; // Não usado diretamente, mas mantido como referência
 
             // --- CABEÇALHO GERAL ---
             doc.setFontSize(18);
@@ -1298,7 +1274,7 @@
                 headStyles: { fillColor: primaryColor, textColor: 255 },
                 styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
                 didDrawPage: function (data) {
-                    finalY = data.cursor.y; // Atualiza finalY para o final da tabela
+                    finalY = data.cursor.y; 
                 }
             });
 
@@ -1328,7 +1304,7 @@
                 headStyles: { fillColor: primaryColor, textColor: 255 },
                 styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
                 didDrawPage: function (data) {
-                    finalY = data.cursor.y; // Atualiza finalY
+                    finalY = data.cursor.y; 
                 }
             });
 
@@ -1341,7 +1317,7 @@
 
             const totalCreditoGerado = vendasConsignatario.reduce((sum, v) => sum + v.creditoGerado, 0);
             const totalConsumido = consumosConsignatario.reduce((sum, c) => sum + c.valor, 0);
-            const saldoAtual = consignatario.creditos; // O saldo já está calculado na variável global
+            const saldoAtual = consignatario.creditos; 
 
             const resumoData = [
                 ['Total de Crédito Gerado (Vendas)', formatarMoeda(totalCreditoGerado)],
@@ -1375,38 +1351,42 @@
         // CONFIGURAÇÕES
         // =========================================
         function preencherCamposConfiguracao() {
-            document.getElementById('percentualConsignatario').value = configuracoes.percentualConsignatario;
-            document.getElementById('percentualLoja').value = configuracoes.percentualLoja;
-            document.getElementById('validadeCredito').value = configuracoes.validadeCredito;
-            document.getElementById('alertaEstoque').value = configuracoes.alertaEstoque;
+            const percCons = document.getElementById('percentualConsignatario');
+            const percLoja = document.getElementById('percentualLoja');
+            const validade = document.getElementById('validadeCredito');
+            const alerta = document.getElementById('alertaEstoque');
+
+            if (percCons) percCons.value = configuracoes.percentualConsignatario;
+            if (percLoja) percLoja.value = configuracoes.percentualLoja;
+            if (validade) validade.value = configuracoes.validadeCredito;
+            if (alerta) alerta.value = configuracoes.alertaEstoque;
             
-            // Atualiza o tema
             document.documentElement.setAttribute('data-theme', configuracoes.tema);
             const icon = document.querySelector('.theme-toggle i');
-            if (icon) { // Checa se o ícone existe
+            if (icon) { 
                 icon.className = configuracoes.tema === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
         
         function salvarConfiguracoes() {
-            const percCons = parseInt(document.getElementById('percentualConsignatario').value);
-            const percLoja = parseInt(document.getElementById('percentualLoja').value);
-            const validade = parseInt(document.getElementById('validadeCredito').value);
-            const alerta = parseInt(document.getElementById('alertaEstoque').value);
+            const percCons = parseInt(document.getElementById('percentualConsignatario')?.value);
+            const percLoja = parseInt(document.getElementById('percentualLoja')?.value);
+            const validade = parseInt(document.getElementById('validadeCredito')?.value);
+            const alerta = parseInt(document.getElementById('alertaEstoque')?.value);
 
-            if (percCons + percLoja !== 100) {
+            if (isNaN(percCons) || isNaN(percLoja) || percCons + percLoja !== 100) {
                 mostrarNotificacao('A soma do Percentual Consignatário e Percentual Loja deve ser 100.', 'erro');
                 return;
             }
 
             configuracoes.percentualConsignatario = percCons;
             configuracoes.percentualLoja = percLoja;
-            configuracoes.validadeCredito = validade;
-            configuracoes.alertaEstoque = alerta;
+            configuracoes.validadeCredito = isNaN(validade) ? 6 : validade;
+            configuracoes.alertaEstoque = isNaN(alerta) ? 5 : alerta;
 
             localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
             mostrarNotificacao('Configurações salvas com sucesso!', 'sucesso');
-            renderizarItens(); // Pode mudar o alerta de estoque
+            renderizarItens(); 
         }
 
 
@@ -1437,7 +1417,7 @@
         }
 
         function iniciarImportacao() {
-            document.getElementById('importFile').click();
+            document.getElementById('importFile')?.click();
         }
         
         function processarImportacao(event) {
@@ -1465,7 +1445,7 @@
                         configuracoes = { ...configuracoes, ...dadosImportados.configuracoes };
                     }
                     
-                    salvarDados(); // Salva os dados importados no localStorage
+                    salvarDados(); 
                     mostrarNotificacao('Dados importados com sucesso! Recarregando a página...', 'sucesso', 5000);
                     
                     setTimeout(() => {
@@ -1488,14 +1468,22 @@
             // Seta o active na dashboard ao carregar
             if (document.getElementById('dashboard')) {
                 showTab('dashboard');
+            } else {
+                // Caso não encontre a dashboard, tenta a primeira aba
+                 const firstTab = document.querySelector('.tab-button');
+                 if (firstTab) {
+                    const tabId = firstTab.getAttribute('onclick').match(/'(.*?)'/)[1];
+                    showTab(tabId);
+                 }
             }
+
 
             // Atalhos de teclado
             document.addEventListener('keydown', function(e) {
                 // Ctrl+S para salvar (Cadastrar Item/Cliente)
                 if (e.ctrlKey && e.key === 's') {
                     e.preventDefault();
-                    const tabAtiva = document.querySelector('.tab-content.active').id;
+                    const tabAtiva = document.querySelector('.tab-content.active')?.id;
                     if (tabAtiva === 'itens') {
                         adicionarItem();
                     } else if (tabAtiva === 'consignatarios') {
