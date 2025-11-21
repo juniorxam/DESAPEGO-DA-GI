@@ -1,5 +1,3 @@
-// Conteúdo JavaScript completo copiado do arquivo original
-
 // =========================================
 // VARIÁVEIS GLOBAIS
 // =========================================
