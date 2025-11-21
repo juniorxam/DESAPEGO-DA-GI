@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BazarPlus - Gestão de Bazares e Créditos</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-store-alt"></i> BazarPlus</h1>
+            <div class="header-right">
+                <button id="exportData" class="btn btn-info"><i class="fas fa-download"></i> Exportar Dados (Ctrl+E)</button>
+                <div class="theme-toggle">
+                    <input type="checkbox" id="dark-mode-toggle" class="dark-mode-toggle">
+                    <label for="dark-mode-toggle" class="toggle-label"></label>
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs-nav">
+            <button class="tab-button active" onclick="openTab(event, 'dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
+            <button class="tab-button" onclick="openTab(event, 'vendas')"><i class="fas fa-cash-register"></i> Vendas</button>
+            <button class="tab-button" onclick="openTab(event, 'itens')"><i class="fas fa-boxes"></i> Itens</button>
+            <button class="tab-button" onclick="openTab(event, 'consignatarios')"><i class="fas fa-user-tag"></i> Consignatários</button>
+            <button class="tab-button" onclick="openTab(event, 'compradores')"><i class="fas fa-shopping-cart"></i> Compradores</button>
+            <button class="tab-button" onclick="openTab(event, 'bazares')"><i class="fas fa-calendar-alt"></i> Bazares</button>
+            <button class="tab-button" onclick="openTab(event, 'relatorios')"><i class="fas fa-file-alt"></i> Relatórios</button>
+            <button class="tab-button" onclick="openTab(event, 'config')"><i class="fas fa-cog"></i> Configurações</button>
+        </nav>
+
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <i class="fas fa-dollar-sign"></i>
+                    <p>Total Arrecadado</p>
+                    <span id="totalArrecadado">R$ 0,00</span>
+                </div>
+                <div class="stat-card success">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <p>Total Consignado</p>
+                    <span id="totalConsignado">R$ 0,00</span>
+                </div>
+                <div class="stat-card danger">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <p>Total Comissão</p>
+                    <span id="totalComissao">R$ 0,00</span>
+                </div>
+                <div class="stat-card info">
+                    <i class="fas fa-tags"></i>
+                    <p>Itens Vendidos</p>
+                    <span id="itensVendidos">0</span>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Vendas por Mês</h3>
+                <canvas id="vendasChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Vendas por Consignatário (Top 5)</h3>
+                <canvas id="consignatariosChart"></canvas>
+            </div>
+
+        </div>
+        
+        <div id="vendas" class="tab-content">
+            <h2>Registro de Vendas</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="vendaItem">Código do Item:</label>
+                    <input type="text" id="vendaItem" placeholder="Insira o código do item" required>
+                    <span id="item-info" class="text-muted"></span>
+                </div>
+                <div class="input-group">
+                    <label for="vendaComprador">Comprador:</label>
+                    <select id="vendaComprador" required>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="vendaBazar">Bazar:</label>
+                    <select id="vendaBazar" required>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="vendaPreco">Preço de Venda (R$):</label>
+                    <input type="number" id="vendaPreco" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="vendaTipoPagamento">Pagamento:</label>
+                    <select id="vendaTipoPagamento" required>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão">Cartão</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Crédito Interno">Crédito Interno</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="vendaData">Data da Venda:</label>
+                    <input type="date" id="vendaData" value="" required>
+                </div>
+            </div>
+            <button onclick="registrarVenda()" class="btn btn-primary btn-full"><i class="fas fa-plus"></i> Registrar Venda</button>
+
+            <h3>Vendas Registradas</h3>
+            <div class="table-container">
+                <table id="vendasTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Item (Código)</th>
+                            <th>Consignatário</th>
+                            <th>Comprador</th>
+                            <th>Valor Venda</th>
+                            <th>Comissão</th>
+                            <th>Repasse</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="itens" class="tab-content">
+            <h2>Cadastro de Itens</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="itemCodigo">Código:</label>
+                    <input type="text" id="itemCodigo" placeholder="Código Único (ex: C001-01)" required>
+                </div>
+                <div class="input-group">
+                    <label for="itemDescricao">Descrição:</label>
+                    <input type="text" id="itemDescricao" placeholder="Vestido longo, Brinquedo, etc." required>
+                </div>
+                <div class="input-group">
+                    <label for="itemPrecoSugerido">Preço Sugerido (R$):</label>
+                    <input type="number" id="itemPrecoSugerido" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+                <div class="input-group">
+                    <label for="itemConsignatario">Consignatário:</label>
+                    <select id="itemConsignatario" required>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="itemBazar">Bazar de Entrada:</label>
+                    <select id="itemBazar" required>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="itemStatus">Status:</label>
+                    <select id="itemStatus" required>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Vendido">Vendido</option>
+                        <option value="Baixado">Baixado (Devolvido/Descartado)</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="adicionarItem()" class="btn btn-primary btn-full"><i class="fas fa-plus"></i> Cadastrar Item (Ctrl+S)</button>
+
+            <h3>Itens Cadastrados</h3>
+            <div class="filter-controls">
+                <input type="text" id="filtroItens" placeholder="Filtrar por Código, Descrição ou Consignatário">
+                <select id="filtroStatus">
+                    <option value="">Todos os Status</option>
+                    <option value="Disponível">Disponível</option>
+                    <option value="Vendido">Vendido</option>
+                    <option value="Baixado">Baixado</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table id="itensTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Preço Sugerido</th>
+                            <th>Consignatário</th>
+                            <th>Bazar</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="consignatarios" class="tab-content">
+            <h2>Cadastro de Consignatários</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="consignatarioNome">Nome:</label>
+                    <input type="text" id="consignatarioNome" placeholder="Nome Completo" required>
+                </div>
+                <div class="input-group">
+                    <label for="consignatarioEmail">Email:</label>
+                    <input type="email" id="consignatarioEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="input-group">
+                    <label for="consignatarioTelefone">Telefone:</label>
+                    <input type="text" id="consignatarioTelefone" placeholder="(XX) XXXXX-XXXX">
+                </div>
+            </div>
+            <button onclick="adicionarConsignatario()" class="btn btn-primary btn-full"><i class="fas fa-user-tag"></i> Cadastrar Consignatário (Ctrl+S)</button>
+
+            <h3>Consignatários Cadastrados</h3>
+            <div class="table-container">
+                <table id="consignatariosTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Crédito Disponível (R$)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="compradores" class="tab-content">
+            <h2>Cadastro de Compradores</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="compradorNome">Nome:</label>
+                    <input type="text" id="compradorNome" placeholder="Nome Completo" required>
+                </div>
+                <div class="input-group">
+                    <label for="compradorEmail">Email:</label>
+                    <input type="email" id="compradorEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="input-group">
+                    <label for="compradorTelefone">Telefone:</label>
+                    <input type="text" id="compradorTelefone" placeholder="(XX) XXXXX-XXXX">
+                </div>
+            </div>
+            <button onclick="adicionarComprador()" class="btn btn-primary btn-full"><i class="fas fa-shopping-cart"></i> Cadastrar Comprador (Ctrl+S)</button>
+
+            <h3>Compradores Cadastrados</h3>
+            <div class="table-container">
+                <table id="compradoresTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="bazares" class="tab-content">
+            <h2>Gestão de Bazares</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="bazarNome">Nome do Bazar:</label>
+                    <input type="text" id="bazarNome" placeholder="Bazar Primavera 2025" required>
+                </div>
+                <div class="input-group">
+                    <label for="bazarDataInicio">Data de Início:</label>
+                    <input type="date" id="bazarDataInicio" required>
+                </div>
+                <div class="input-group">
+                    <label for="bazarDataFim">Data de Fim:</label>
+                    <input type="date" id="bazarDataFim">
+                </div>
+                <div class="input-group">
+                    <label for="bazarStatus">Status:</label>
+                    <select id="bazarStatus">
+                        <option value="Ativo">Ativo</option>
+                        <option value="Finalizado">Finalizado</option>
+                        <option value="Planejado">Planejado</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="criarBazar()" class="btn btn-primary btn-full"><i class="fas fa-calendar-plus"></i> Criar Bazar (Ctrl+S)</button>
+
+            <h3>Bazares Registrados</h3>
+            <div class="table-container">
+                <table id="bazaresTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Início</th>
+                            <th>Fim</th>
+                            <th>Status</th>
+                            <th>Total Vendas (R$)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="relatorios" class="tab-content">
+            <h2>Relatórios de Consignatários</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="relatorioConsignatario">Selecionar Consignatário:</label>
+                    <select id="relatorioConsignatario" onchange="gerarRelatorioConsignatario()">
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="relatorioBazar">Filtrar por Bazar:</label>
+                    <select id="relatorioBazar" onchange="gerarRelatorioConsignatario()">
+                        <option value="">Todos os Bazares</option>
+                        </select>
+                </div>
+            </div>
+
+            <div id="relatorioOutput" class="relatorio-output">
+                </div>
+            
+            <button id="downloadRelatorio" class="btn btn-success" style="display: none;" onclick="exportarRelatorioPDF()"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+
+            <h3>Histórico de Créditos/Pagamentos</h3>
+            <div class="table-container">
+                <table id="creditoHistoricoTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+
+            <h3>Ajuste de Crédito</h3>
+            <div class="form-grid small-grid">
+                <div class="input-group">
+                    <label for="ajusteTipo">Tipo de Ajuste:</label>
+                    <select id="ajusteTipo">
+                        <option value="Adicionar">Adicionar (Pagamento)</option>
+                        <option value="Subtrair">Subtrair (Gasto/Retirada)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="ajusteValor">Valor (R$):</label>
+                    <input type="number" id="ajusteValor" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="ajusteDescricao">Descrição:</label>
+                    <input type="text" id="ajusteDescricao" placeholder="Pagamento em PIX, Retirada em espécie, etc.">
+                </div>
+            </div>
+            <button onclick="ajustarCredito()" class="btn btn-warning"><i class="fas fa-edit"></i> Realizar Ajuste</button>
+        </div>
+
+        <div id="config" class="tab-content">
+            <h2>Configurações do Sistema</h2>
+            <div class="config-section">
+                <h3>Taxas e Comissões</h3>
+                <div class="form-grid small-grid">
+                    <div class="input-group">
+                        <label for="comissaoPadrao">Comissão Padrão do Bazar (%):</label>
+                        <input type="number" id="comissaoPadrao" placeholder="30" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="descontoMaximo">Desconto Máximo Permitido (%):</label>
+                        <input type="number" id="descontoMaximo" placeholder="10" min="0" max="100">
+                    </div>
+                </div>
+                <button onclick="salvarConfiguracoes()" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Configurações</button>
+            </div>
+            
+            <div class="config-section">
+                <h3>Gerenciamento de Dados</h3>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importarDados(event)">
+                <button onclick="document.getElementById('importFile').click()" class="btn btn-info"><i class="fas fa-upload"></i> Importar Dados (.json)</button>
+                <button onclick="exportarDados()" class="btn btn-info"><i class="fas fa-download"></i> Exportar Dados (.json)</button>
+                <button onclick="limparTodosDados()" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Limpar TODOS os Dados</button>
+                <p class="text-muted mt-2">Use a opção de exportar para fazer um backup antes de limpar.</p>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2025 BazarPlus - Gestão de Bazares e Créditos. Desenvolvido por [Seu Nome/Empresa]</p>
+        </footer>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
