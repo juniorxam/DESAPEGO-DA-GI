@@ -31,9 +31,9 @@
             return new Date().toISOString().split('T')[0];
         }
 
-        function mostrarNotificacao(mensagem, tipo = 'info') {
+        function mostrarNotificacao(mensagem, tipo = 'info', duracao = 3000) {
             const area = document.getElementById('notification-area');
-            if (!area) return; // Segurança extra
+            if (!area) return; 
 
             const notif = document.createElement('div');
             notif.className = `notification ${tipo}`;
@@ -43,7 +43,7 @@
             setTimeout(() => {
                 notif.classList.add('hide');
                 notif.addEventListener('transitionend', () => notif.remove());
-            }, 3000);
+            }, duracao);
         }
 
         // =========================================
@@ -91,13 +91,12 @@
             renderizarVendas();
             renderizarConsumos();
             popularFiltrosDashboard();
+            popularSelectsRelatorio(); // NOVO: Para popular a aba Relatórios
             preencherCamposConfiguracao();
         }
 
         function checkInitializers() {
-            if (bazares.length === 0) {
-                // A notificação será exibida na primeira carga
-            }
+            // Pode ser usado para notificações iniciais
         }
 
         function limparTudo(confirmar = true) {
@@ -240,7 +239,7 @@
         }
 
         // =========================================
-        // NAVEGAÇÃO (CORRIGIDO)
+        // NAVEGAÇÃO (CORRIGIDO E ATUALIZADO)
         // =========================================
         function showTab(tabId) {
             // Remove a classe 'active' de todos os conteúdos de aba
@@ -267,6 +266,8 @@
             // Renderiza o conteúdo específico da aba
             if (tabId === 'dashboard') {
                 renderizarDashboard();
+            } else if (tabId === 'relatorios') { // NOVO: Para popular a aba Relatórios
+                 popularSelectsRelatorio();
             } else {
                 renderizarTodasTabelas();
             }
@@ -593,13 +594,12 @@
 
 
         // =========================================
-        // GESTÃO DE ITENS (CORRIGIDO)
+        // GESTÃO DE ITENS
         // =========================================
         function popularSelectsItens() {
             const selectConsignatario = document.getElementById('itemConsignatarioId');
             const selectBazar = document.getElementById('itemBazarId');
             
-            // CORREÇÃO: Verifica se os elementos existem antes de tentar manipulá-los.
             if (!selectConsignatario || !selectBazar) {
                 return; 
             }
@@ -757,13 +757,12 @@
         
         
         // =========================================
-        // GESTÃO DE VENDAS (CORRIGIDO)
+        // GESTÃO DE VENDAS
         // =========================================
         function popularSelectsVenda() {
             const selectItem = document.getElementById('vendaItemId');
             const selectComprador = document.getElementById('vendaCompradorId');
             
-            // CORREÇÃO: Verifica se os elementos existem antes de tentar manipulá-los.
             if (!selectItem || !selectComprador) {
                 return;
             }
@@ -932,7 +931,7 @@
         }
 
         // =========================================
-        // GESTÃO DE CONSUMOS / RETIRADAS (CORRIGIDO)
+        // GESTÃO DE CONSUMOS / RETIRADAS
         // =========================================
         function popularSelectsConsumo() {
             const selectConsignatario = document.getElementById('consumoConsignatarioId');
@@ -1141,39 +1140,43 @@
             });
             const dadosMeses = sortedMeses.map(m => vendasPorMes[m]);
 
-            if (chartVendasPorMes) chartVendasPorMes.destroy();
-            chartVendasPorMes = new Chart(document.getElementById('chartVendasMes'), {
-                type: 'bar',
-                data: {
-                    labels: labelsMeses,
-                    datasets: [{
-                        label: 'Total de Vendas (BRL)',
-                        data: dadosMeses,
-                        backgroundColor: primaryColorLight,
-                        borderColor: primaryColor,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: textColor },
-                            grid: { color: gridColor }
-                        },
-                        x: {
-                            ticks: { color: textColor },
-                            grid: { color: gridColor }
-                        }
+            const ctxMes = document.getElementById('chartVendasMes');
+            if (ctxMes) {
+                if (chartVendasPorMes) chartVendasPorMes.destroy();
+                chartVendasPorMes = new Chart(ctxMes, {
+                    type: 'bar',
+                    data: {
+                        labels: labelsMeses,
+                        datasets: [{
+                            label: 'Total de Vendas (BRL)',
+                            data: dadosMeses,
+                            backgroundColor: primaryColorLight,
+                            borderColor: primaryColor,
+                            borderWidth: 1
+                        }]
                     },
-                    plugins: {
-                        legend: { labels: { color: textColor } },
-                        tooltip: { callbacks: { label: (context) => formatarMoeda(context.parsed.y) } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: textColor } },
+                            tooltip: { callbacks: { label: (context) => formatarMoeda(context.parsed.y) } }
+                        }
                     }
-                }
-            });
+                });
+            }
+
 
             // 2. Vendas por Forma de Pagamento
             const vendasPorPagamento = vendasFiltradas.reduce((acc, v) => {
@@ -1183,31 +1186,57 @@
             const labelsPagamento = Object.keys(vendasPorPagamento);
             const dadosPagamento = Object.values(vendasPorPagamento);
 
-            if (chartVendasPorPagamento) chartVendasPorPagamento.destroy();
-            chartVendasPorPagamento = new Chart(document.getElementById('chartVendasPagamento'), {
-                type: 'pie',
-                data: {
-                    labels: labelsPagamento,
-                    datasets: [{
-                        data: dadosPagamento,
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', primaryColorLight], 
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: textColor } },
-                        tooltip: { callbacks: { label: ({ label, raw }) => `${label}: ${formatarMoeda(raw)}` } }
+            const ctxPagamento = document.getElementById('chartVendasPagamento');
+            if (ctxPagamento) {
+                if (chartVendasPorPagamento) chartVendasPorPagamento.destroy();
+                chartVendasPorPagamento = new Chart(ctxPagamento, {
+                    type: 'pie',
+                    data: {
+                        labels: labelsPagamento,
+                        datasets: [{
+                            data: dadosPagamento,
+                            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', primaryColorLight], 
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { color: textColor } },
+                            tooltip: { callbacks: { label: ({ label, raw }) => `${label}: ${formatarMoeda(raw)}` } }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
         
         // =========================================
         // FUNÇÕES DE RELATÓRIOS (PDF)
         // =========================================
+        
+        // NOVO: Funções para a aba Relatórios
+        function popularSelectsRelatorio() {
+            const select = document.getElementById('selectRelatorioConsignatario');
+            if (!select) return;
+
+            // Mantém a opção de 'Selecione...'
+            select.innerHTML = '<option value="">Selecione...</option>';
+            clientes.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+            });
+        }
+        
+        function dispararRelatorioConsignatario() {
+            const consignatarioId = parseInt(document.getElementById('selectRelatorioConsignatario')?.value);
+            
+            if (isNaN(consignatarioId)) {
+                mostrarNotificacao('Por favor, selecione um consignatário para gerar o relatório.', 'erro');
+                return;
+            }
+
+            gerarRelatorioConsignatarioPDF(consignatarioId);
+        }
 
         function gerarRelatorioConsignatarioPDF(consignatarioId) {
             const consignatario = clientes.find(c => c.id === consignatarioId);
@@ -1231,16 +1260,19 @@
             const margin = 10;
             let finalY = margin;
 
-            const primaryColor = configuracoes.tema === 'dark' ? '#8b5cf6' : '#6d28d9';
+            const isDarkMode = configuracoes.tema === 'dark';
+            const primaryColor = isDarkMode ? [139, 92, 246] : [109, 40, 217]; // R, G, B para primary
+            const textColor = isDarkMode ? 241 : 31; // 241 para light, 31 para dark
+
 
             // --- CABEÇALHO GERAL ---
             doc.setFontSize(18);
-            doc.setTextColor(primaryColor);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
             doc.text(`Relatório de Consignatário`, margin, finalY);
             finalY += 8;
             
             doc.setFontSize(12);
-            doc.setTextColor(50);
+            doc.setTextColor(textColor);
             doc.text(`Nome: ${consignatario.nome}`, margin, finalY);
             finalY += 6;
             doc.setFontSize(10);
@@ -1249,7 +1281,7 @@
             
             // --- TABELA DE VENDAS ---
             doc.setFontSize(14);
-            doc.setTextColor(primaryColor);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
             doc.text('1. Vendas Detalhadas', margin, finalY);
             finalY += 5;
 
@@ -1272,7 +1304,7 @@
                 body: bodyVendas,
                 theme: 'striped',
                 headStyles: { fillColor: primaryColor, textColor: 255 },
-                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', textColor: textColor },
                 didDrawPage: function (data) {
                     finalY = data.cursor.y; 
                 }
@@ -1281,7 +1313,7 @@
             // --- TABELA DE CONSUMOS/PAGAMENTOS ---
             finalY += 8; 
             doc.setFontSize(14);
-            doc.setTextColor(primaryColor);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
             doc.text('2. Retiradas / Consumos de Crédito', margin, finalY);
             finalY += 5;
 
@@ -1302,7 +1334,7 @@
                 body: bodyConsumos,
                 theme: 'grid',
                 headStyles: { fillColor: primaryColor, textColor: 255 },
-                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', textColor: textColor },
                 didDrawPage: function (data) {
                     finalY = data.cursor.y; 
                 }
@@ -1311,7 +1343,7 @@
             // --- RESUMO FINANCEIRO ---
             finalY += 10;
             doc.setFontSize(14);
-            doc.setTextColor(primaryColor);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
             doc.text('3. Resumo Financeiro', margin, finalY);
             finalY += 5;
 
@@ -1330,7 +1362,7 @@
                 head: [['Metrica', 'Valor']],
                 body: resumoData,
                 theme: 'plain',
-                styles: { fontSize: 10, cellPadding: 3 },
+                styles: { fontSize: 10, cellPadding: 3, textColor: textColor },
                 columnStyles: {
                     1: { fontStyle: 'bold', halign: 'right' }
                 },
@@ -1470,28 +1502,34 @@
                 showTab('dashboard');
             } else {
                 // Caso não encontre a dashboard, tenta a primeira aba
-                 const firstTab = document.querySelector('.tab-button');
+                 const firstTab = document.querySelector('.tab-nav .tab-button');
                  if (firstTab) {
-                    const tabId = firstTab.getAttribute('onclick').match(/'(.*?)'/)[1];
-                    showTab(tabId);
+                    // Extrai o ID da função showTab no onclick
+                    const onclickAttr = firstTab.getAttribute('onclick');
+                    const match = onclickAttr.match(/'(.*?)'/);
+                    if (match && match[1]) {
+                        showTab(match[1]);
+                    }
                  }
             }
 
 
             // Atalhos de teclado
             document.addEventListener('keydown', function(e) {
+                // Obtém o ID da aba ativa de forma segura
+                const tabAtiva = document.querySelector('.tab-content.active')?.id;
+                
                 // Ctrl+S para salvar (Cadastrar Item/Cliente)
                 if (e.ctrlKey && e.key === 's') {
                     e.preventDefault();
-                    const tabAtiva = document.querySelector('.tab-content.active')?.id;
                     if (tabAtiva === 'itens') {
-                        adicionarItem();
+                        document.getElementById('itemSalvar').click();
                     } else if (tabAtiva === 'consignatarios') {
-                        adicionarConsignatario();
+                        document.getElementById('consignatarioSalvar').click();
                     } else if (tabAtiva === 'compradores') {
-                        adicionarComprador();
+                        document.getElementById('compradorSalvar').click();
                     } else if (tabAtiva === 'bazares') {
-                        criarBazar();
+                        document.getElementById('bazarSalvar').click();
                     }
                 }
                 // Ctrl+E para exportar
