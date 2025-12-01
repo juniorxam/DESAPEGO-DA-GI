@@ -196,6 +196,7 @@
         .dashboard-card.comissao::before { background-color: var(--info); }
         .dashboard-card.vendas::before { background-color: var(--purple); }
         .dashboard-card.itens::before { background-color: var(--warning); }
+        .dashboard-card.aguardando-pagamento::before { background-color: #f59e0b; }
 
         .dashboard-card h3 {
             font-size: 1rem;
@@ -221,6 +222,7 @@
         .dashboard-card.comissao .value { color: var(--info); }
         .dashboard-card.vendas .value { color: var(--purple); }
         .dashboard-card.itens .value { color: var(--warning); }
+        .dashboard-card.aguardando-pagamento .value { color: #f59e0b; }
 
         .progress-bar {
             height: 8px;
@@ -424,6 +426,13 @@
             color: var(--danger);
         }
 
+        .btn-confirmar-pagamento {
+            background-color: var(--warning) !important;
+            color: white !important;
+            padding: 5px 10px !important;
+            border-radius: 4px !important;
+        }
+
         /* Status Badges */
         .status-badge {
             display: inline-block;
@@ -444,6 +453,9 @@
         .status-badge.ativo { background-color: var(--success); }
         .status-badge.inativo { background-color: var(--danger); }
         .status-badge.comprador { background-color: var(--primary); }
+        .status-badge.pago { background-color: var(--success); }
+        .status-badge.pendente { background-color: var(--warning); }
+        .status-badge.aguardando { background-color: var(--danger); }
 
         /* Filtros */
         .filtros-container {
@@ -856,7 +868,14 @@
                     <h3>Total de Itens Vendidos</h3>
                     <p class="value" id="totalItensVendidos">0</p>
                 </div>
-                
+                <!-- NOVO CARD ADICIONADO -->
+                <div class="dashboard-card aguardando-pagamento">
+                    <h3>Aguardando Pagamento</h3>
+                    <p class="value" id="totalAguardandoPagamento">R$ 0,00</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill receita" id="progressAguardando" style="width: 0%"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="card">
@@ -957,6 +976,9 @@
 
             <div class="card">
                 <h2><i class="fas fa-shopping-cart"></i> Nova Venda - Cadastro Completo</h2>
+                
+                <!-- CAMPO OCULTO PARA EDIÇÃO DE VENDA -->
+                <input type="hidden" id="vendaIdEdit" value="">
                 
                 <!-- SEÇÃO 1: DADOS DA PARCEIRA -->
                 <div class="form-section">
@@ -1102,7 +1124,7 @@
                                 <option value="pix">PIX</option>
                                 <option value="cartao">Cartão</option>
                                 <option value="link">Link</option>
-								 <option value="Aguardando Pagamento">Aguardando Pagamento</option>
+                                <option value="Aguardando Pagamento">Aguardando Pagamento</option>
                                 <option value="outro">Outro</option>
                             </select>
                         </div>
@@ -1116,7 +1138,7 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button onclick="registrarVendaCompleta()" class="btn btn-success">
+                    <button onclick="registrarVendaCompleta()" class="btn btn-success" id="btnRegistrarVenda">
                         <i class="fas fa-check-circle"></i> Registrar Venda Completa
                     </button>
                     <button onclick="limparFormularioVendaCompleta()" class="btn btn-secondary">
@@ -1142,6 +1164,7 @@
                                 <th>Crédito Parc.</th>
                                 <th>Comissão Loja</th>
                                 <th>Pagamento</th>
+                                <th>Status Pag.</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -1383,6 +1406,10 @@
                     </button>
                     <button onclick="gerarRelatorioCreditosPDF()" class="btn btn-info">
                         <i class="fas fa-file-pdf"></i> Saldo de Créditos por Parceira
+                    </button>
+                    <!-- NOVO BOTÃO ADICIONADO -->
+                    <button onclick="gerarRelatorioAguardandoPagamentoPDF()" class="btn btn-warning">
+                        <i class="fas fa-file-pdf"></i> Aguardando Pagamento
                     </button>
                 </div>
             </div>
