@@ -2955,6 +2955,195 @@ function carregarTema() {
         icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     }
 }
+/* ============================================================
+   18. DADOS DE EXEMPLO
+============================================================ */
+function carregarExemplosConfirmacao() {
+    if (!confirm("Isso substituirá todos os dados atuais por dados de exemplo. Deseja continuar?")) {
+        return;
+    }
+    
+    if (!confirm("ATENÇÃO: Todos os dados atuais serão perdidos! Tem certeza?")) {
+        return;
+    }
+    
+    carregarDadosExemplo();
+}
+
+function carregarDadosExemplo() {
+    // Limpar dados existentes
+    itens = [];
+    vendas = [];
+    desapegos = [];
+    consignatarios = [];
+    compradores = [];
+    consumosCreditos = [];
+    desapegoAtual = null;
+    
+    // Configurações padrão
+    configuracoes = {
+        percentualConsignatario: 80,
+        percentualLoja: 20,
+        alertaEstoque: 5,
+        validadeCredito: 6
+    };
+    
+    // Criar 5 parceiras de exemplo
+    const parceirasExemplo = [
+        { id: gerarId(), nome: "Parceira EX-1 - Maria Silva", telefone: "(11) 11111-1111", email: "maria@exemplo.com", credito: 0, status: "ativo" },
+        { id: gerarId(), nome: "Parceira EX-2 - João Santos", telefone: "(11) 22222-2222", email: "joao@exemplo.com", credito: 0, status: "ativo" },
+        { id: gerarId(), nome: "Parceira EX-3 - Ana Oliveira", telefone: "(11) 33333-3333", email: "ana@exemplo.com", credito: 0, status: "ativo" },
+        { id: gerarId(), nome: "Parceira EX-4 - Carla Lima", telefone: "(11) 44444-4444", email: "carla@exemplo.com", credito: 0, status: "ativo" },
+        { id: gerarId(), nome: "Parceira EX-5 - Pedro Costa", telefone: "(11) 55555-5555", email: "pedro@exemplo.com", credito: 0, status: "ativo" }
+    ];
+    
+    consignatarios = parceirasExemplo;
+    
+    // Criar 5 compradores de exemplo
+    const compradoresExemplo = [
+        { id: gerarId(), nome: "Comprador EX-1 - Carlos Mendes", telefone: "(11) 66666-6666", email: "carlos@exemplo.com", status: "ativo" },
+        { id: gerarId(), nome: "Comprador EX-2 - Fernanda Rocha", telefone: "(11) 77777-7777", email: "fernanda@exemplo.com", status: "ativo" },
+        { id: gerarId(), nome: "Comprador EX-3 - Rafael Alves", telefone: "(11) 88888-8888", email: "rafael@exemplo.com", status: "ativo" },
+        { id: gerarId(), nome: "Comprador EX-4 - Juliana Martins", telefone: "(11) 99999-9999", email: "juliana@exemplo.com", status: "ativo" },
+        { id: gerarId(), nome: "Comprador EX-5 - Bruno Souza", telefone: "(11) 10101-0101", email: "bruno@exemplo.com", status: "ativo" }
+    ];
+    
+    compradores = compradoresExemplo;
+    
+    // Criar desapegos de exemplo
+    const hoje = new Date();
+    const desapego1Id = gerarId();
+    const desapegosExemplo = [
+        { 
+            id: desapego1Id, 
+            nome: "Desapego de Verão 2024", 
+            inicio: new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0],
+            tema: "Roupas de Verão",
+            observacao: "Primeiro desapego do ano com foco em roupas leves",
+            status: "ativo"
+        },
+        { 
+            id: gerarId(), 
+            nome: "Desapego de Inverno 2024", 
+            inicio: new Date(hoje.getFullYear(), hoje.getMonth() - 1, 15).toISOString().split('T')[0],
+            tema: "Roupas de Frio",
+            observacao: "Desapego de roupas de inverno e agasalhos",
+            status: "ativo"
+        }
+    ];
+    
+    desapegos = desapegosExemplo;
+    desapegoAtual = desapego1Id;
+    
+    // Dados para gerar vendas variadas
+    const produtos = [
+        // Roupas
+        { descricao: "Vestido Floral Verão", categoria: "roupa", preco: 89.90, tamanho: "M", marca: "Zara", estado: "novo" },
+        { descricao: "Blusa Básica Algodão", categoria: "roupa", preco: 45.00, tamanho: "P", marca: "Renner", estado: "seminovo" },
+        { descricao: "Calça Jeans Skinny", categoria: "roupa", preco: 79.90, tamanho: "38", marca: "Levi's", estado: "usado" },
+        { descricao: "Short Jeans Destroyed", categoria: "roupa", preco: 65.00, tamanho: "36", marca: "Forever 21", estado: "seminovo" },
+        { descricao: "Camiseta Básica Branca", categoria: "roupa", preco: 35.00, tamanho: "G", marca: "H&M", estado: "novo" },
+        { descricao: "Saia Midi Plissada", categoria: "roupa", preco: 120.00, tamanho: "M", marca: "Shein", estado: "novo" },
+        { descricao: "Blazer Slim Fit", categoria: "roupa", preco: 150.00, tamanho: "40", marca: "Reserva", estado: "seminovo" },
+        
+        // Acessórios
+        { descricao: "Bolsa de Couro Preta", categoria: "bolsa", preco: 180.00, tamanho: "M", marca: "Animale", estado: "seminovo" },
+        { descricao: "Cinto de Couro Marrom", categoria: "acessorio", preco: 45.00, tamanho: "P", marca: "Colcci", estado: "usado" },
+        { descricao: "Óculos de Sol Vintage", categoria: "acessorio", preco: 75.00, tamanho: "Único", marca: "Ray-Ban", estado: "seminovo" },
+        
+        // Calçados
+        { descricao: "Tênis Casual Branco", categoria: "calcado", preco: 120.00, tamanho: "38", marca: "Nike", estado: "seminovo" },
+        { descricao: "Sandália Rasteira", categoria: "calcado", preco: 55.00, tamanho: "36", marca: "Arezzo", estado: "usado" },
+        { descricao: "Sapato Social Preto", categoria: "calcado", preco: 130.00, tamanho: "41", marca: "Diesel", estado: "novo" },
+        
+        // Outros
+        { descricao: "Vestido Longo Festa", categoria: "roupa", preco: 200.00, tamanho: "G", marca: "Farm", estado: "novo" },
+        { descricao: "Jaqueta Jeans", categoria: "roupa", preco: 95.00, tamanho: "M", marca: "Guess", estado: "seminovo" },
+        { descricao: "Bolsa Tote Grande", categoria: "bolsa", preco: 110.00, tamanho: "G", marca: "Louis Vuitton", estado: "usado" }
+    ];
+    
+    const formasPagamento = ["dinheiro", "pix", "cartao", "link", "Aguardando Pagamento"];
+    
+    // Gerar 30 vendas
+    const vendasExemplo = [];
+    const itensExemplo = [];
+    
+    for (let i = 0; i < 30; i++) {
+        const produto = produtos[Math.floor(Math.random() * produtos.length)];
+        const parceira = consignatarios[Math.floor(Math.random() * consignatarios.length)];
+        const comprador = compradores[Math.floor(Math.random() * compradores.length)];
+        const desapego = desapegos[Math.floor(Math.random() * desapegos.length)];
+        const formaPagamento = formasPagamento[Math.floor(Math.random() * formasPagamento.length)];
+        
+        // Gerar data aleatória nos últimos 3 meses
+        const dataVenda = new Date();
+        dataVenda.setDate(dataVenda.getDate() - Math.floor(Math.random() * 90));
+        
+        // Criar item
+        const itemId = gerarId();
+        const item = {
+            id: itemId,
+            descricao: produto.descricao,
+            categoria: produto.categoria,
+            preco: produto.preco,
+            tamanho: produto.tamanho,
+            marca: produto.marca,
+            estado: produto.estado,
+            consignatarioId: parceira.id,
+            observacao: `Item ${i + 1} - ${produto.estado}`,
+            desapegoId: desapego.id,
+            status: "vendido",
+            dataCadastro: dataVenda.toISOString()
+        };
+        
+        itensExemplo.push(item);
+        
+        // Calcular créditos e comissão
+        const creditoParceira = produto.preco * (configuracoes.percentualConsignatario / 100);
+        const comissaoLoja = produto.preco * (configuracoes.percentualLoja / 100);
+        
+        // Determinar status de pagamento
+        const statusPagamento = formaPagamento === 'Aguardando Pagamento' ? 'pendente' : 'pago';
+        
+        // Criar venda
+        const venda = {
+            id: gerarId(),
+            itemId: itemId,
+            precoVenda: produto.preco,
+            dataVenda: dataVenda.toISOString().split('T')[0],
+            compradorId: comprador.id,
+            desapegoId: desapego.id,
+            pagamento: formaPagamento,
+            creditoConsignatario: statusPagamento === 'pendente' ? 0 : creditoParceira,
+            comissaoLoja: statusPagamento === 'pendente' ? 0 : comissaoLoja,
+            consignatarioId: parceira.id,
+            statusPagamento: statusPagamento
+        };
+        
+        vendasExemplo.push(venda);
+        
+        // Atualizar créditos da parceira apenas se pago
+        if (statusPagamento === 'pago') {
+            const parceiraIndex = consignatarios.findIndex(c => c.id === parceira.id);
+            if (parceiraIndex !== -1) {
+                consignatarios[parceiraIndex].credito = (consignatarios[parceiraIndex].credito || 0) + creditoParceira;
+            }
+        }
+    }
+    
+    itens = itensExemplo;
+    vendas = vendasExemplo;
+    
+    salvarDados();
+    
+    // Atualizar a interface
+    init();
+    
+    mostrarNotificacao("✅ 30 vendas de exemplo carregadas com sucesso! (5 parceiras × 5 compradores)", "sucesso");
+    
+    // Abrir o dashboard para mostrar os dados
+    abrirTab('dashboard');
+}
 
 /* ============================================================
    18. INICIALIZAÇÃO FINAL
